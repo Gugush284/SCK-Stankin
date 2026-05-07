@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: sck
+      POSTGRES_PASSWORD: sck
+      POSTGRES_DB: sck
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sck -d sck"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    ports:
+      - "5003:5003"
+    environment:
+      DATABASE_URL: postgresql://sck:sck@db:5432/sck
+      API_HOST: 0.0.0.0
+      API_PORT: 5003
+      SYNC_CURRENCIES: USD,EUR
+      SYNC_INTERVAL_SECONDS: 86400
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+
+volumes:
+  pgdata:
+
+networks:
+  internal:
